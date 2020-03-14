@@ -22,17 +22,17 @@ int main()
 		  0, 1,2,3,4,5,6,7 };
 	float M3[8][8];
 	float buffer[8];
-	char a = 0b00000001;
-	int x;
+	float x;
 	__asm
 	{
 	jmp start
 
 	matrixmul:
 		mov ecx, 8
-
 		LOOP1:
 
+			cmp ecx, 0
+			je LOOP1EXIT
 			mov ebx, ecx
 			mov ecx, 8
 
@@ -52,27 +52,47 @@ int main()
 			mov ecx, 8
 			LOOP3:   //считаем элементы ebx-1 того столбца новой матрицы, в каждом цикле считается один элемент начиная с поледнего
 				
+				cmp ecx, 0
+				je LOOP3EXIT
 				mov eax, ecx    //перемножаем первые 4 элемента ebx-1 того столбца матрицы М2 и ecx-1 той строки матрицы М1
-				dec eax
 				mov dx, 32
 				mul dx
-				movups xmm1, [M1+eax]
+				movups xmm1, [M1+eax-32]
 				movups xmm2, [buffer]
 				mulps xmm1, xmm2
 
 				mov eax, ecx //перемножаем последние  4 элемента ebx-1 того столбца матрицы М2 и ecx-1 той строки матрицы М1
-				dec eax
 				mov dx, 32
 				mul dx
-				movups xmm2, [M1+eax+16]
+				movups xmm2, [M1+eax-16]
 				movups xmm3, [buffer+16]
 				mulps xmm2, xmm3
 				//складываем все элементы из xmm1 и xmm2
 				addps xmm1, xmm2
-				//дописать сложение всех float из xmm1 и запись их в элемент M3[edx-1][ecx-1] 
-			loop LOOP3
-			
-		loop LOOP1
+				//дописать сложение всех float из xmm1 и запись их суммы в элемент M3[edx-1][ecx-1] 
+				movss [x], xmm1
+				fld [x]
+				shufps xmm1,xmm1, 11100101b
+				movss [x], xmm1
+				fld [x]
+			    shufps xmm1, xmm1, 11101010b
+				movss [x], xmm1
+				fld [x]
+				shufps xmm1, xmm1, 11111111b
+				movss [x], xmm1
+				fld [x]
+				fadd
+				fadd
+				fadd
+				fstp [x]
+				dec ecx
+				jmp LOOP3
+			LOOP3EXIT:
+
+			mov ecx, ebx
+			dec ecx
+			jmp LOOP1
+		LOOP1EXIT:
 
 	ret
 
