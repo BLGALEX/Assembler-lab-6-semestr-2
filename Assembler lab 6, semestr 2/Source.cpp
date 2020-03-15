@@ -119,11 +119,11 @@ int main()
 	matrixadd:	
 
 		movups xmm1, [M1]
-		movups xmm2, [M1+64]
+		movups xmm2, [M2+64]
 		addps xmm1, xmm2
 		movups [M1], xmm1
 		movups xmm1, [M1+16]
-		movups xmm2, [M1+80]
+		movups xmm2, [M2+80]
 		addps xmm1, xmm2
 		movups [M1+16], xmm1
 		
@@ -189,33 +189,40 @@ int main()
 				mov eax, ecx    //перемножаем первые 4 элемента ebx-1 того столбца матрицы М2 и ecx-1 той строки матрицы М1
 				mov dx, 32
 				mul dx
-				movups xmm1, [M1_n+eax-32]
-				movups xmm2, [buffer]
-				mulps xmm1, xmm2
 
-				mov eax, ecx //перемножаем последние  4 элемента ebx-1 того столбца матрицы М2 и ecx-1 той строки матрицы М1
-				mov dx, 32
-				mul dx
-				movups xmm2, [M1_n+eax-16]
-				movups xmm3, [buffer+16]
-				mulps xmm2, xmm3
-				//складываем все элементы из xmm1 и xmm2
-				addps xmm1, xmm2
-				//дописать сложение всех float из xmm1 и запись их суммы в элемент M3[edx-1][ecx-1] 
-				movss [x], xmm1
-				fld [x]
-				shufps xmm1,xmm1, 11100101b
-				movss [x], xmm1
-				fld [x]
-			    shufps xmm1, xmm1, 11101010b
-				movss [x], xmm1
-				fld [x]
-				shufps xmm1, xmm1, 11111111b
-				movss [x], xmm1
-				fld [x]
+				fld [M1_n+eax-32]
+				fld [buffer]
+				fmul
+				fld [M1_n+eax-28]
+				fld [buffer+4]
+				fmul
 				fadd
+				fld [M1_n+eax-24]
+				fld [buffer+8]
+				fmul
 				fadd
+				fld [M1_n+eax-20]
+				fld [buffer+12]
+				fmul
 				fadd
+				fld [M1_n+eax-16]
+				fld [buffer+16]
+				fmul
+				fadd
+				fld [M1_n+eax-12]
+				fld [buffer+20]
+				fmul
+				fadd
+				fld [M1_n+eax-8]
+				fld [buffer+24]
+				fmul
+				fadd
+				fld [M1_n+eax-4]
+				fld [buffer+28]
+				fmul
+				fadd
+				fst [x]
+
 				xor edi,edi //Кладем в нужный элемент результат умножения строки на столбец
 				mov eax, ebx
 				dec eax
@@ -272,8 +279,11 @@ int main()
 	start_n:
 		
 		call matrixadd_n
+		call matrixmul_n
 		call matrixnumermul_n
 	}
 
+	x = M3_n[1][1];
+	float y = M3[1][1];
 	return 0;
 }
