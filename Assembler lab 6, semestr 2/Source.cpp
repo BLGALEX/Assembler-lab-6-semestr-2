@@ -1,7 +1,9 @@
 #include<iostream>
+#include <intrin.h>
 
 int main()
 {
+	setlocale(LC_ALL, "Rus");
 	float M1[8][8] = {
 		 1, 0,0,0,0,0,0,0,
 		 0, 1,0,0,0,0,0,0,
@@ -32,6 +34,9 @@ int main()
 			M1_n[i][j] = M1[i][j];
 			M2_n[i][j] = M2[i][j];
 		}
+
+	unsigned __int64 t1, t2;
+	t1 = __rdtsc();
 	__asm
 	{
 	jmp start
@@ -152,8 +157,9 @@ int main()
 		call matrixnumermul
 
 	}
-
-
+	t2 = __rdtsc();
+	std::cout << "Для вычислений с использованием SSE понадобилось " << t2 - t1 << " Тактов процессора или " << (float)(t2 - t1) / 2400000000 << " миллисекунд" << std::endl;
+	t1 = __rdtsc();
 	__asm
 	{
 	jmp start_n
@@ -282,7 +288,8 @@ int main()
 		call matrixmul_n
 		call matrixnumermul_n
 	}
-
+	t2 = __rdtsc();
+	std::cout << "Для вычислений без использования SSE понадобилось " << t2 - t1 << " Тактов процессора или " << (float)(t2 - t1) / 2400000000 << " миллисекунд" << std::endl;
 	x = M3_n[1][1];
 	float y = M3[1][1];
 	return 0;
