@@ -22,8 +22,16 @@ int main()
 		 0, 0,0,0,0,0,0,8 };
 	float M3[8][8];
 	float buffer[8];
+	float buffer_n[8];
 	float x;
-	float input_x = 1.767574;
+	float input_x = 1.76757;
+	float M1_n[8][8], M2_n[8][8], M3_n[8][8];
+	for(int i=0; i< 8;i++)
+		for (int j = 0; j < 8; j++)
+		{
+			M1_n[i][j] = M1[i][j];
+			M2_n[i][j] = M2[i][j];
+		}
 	__asm
 	{
 	jmp start
@@ -145,6 +153,127 @@ int main()
 
 	}
 
+
+	__asm
+	{
+	jmp start_n
+
+	matrixmul_n:
+		
+		mov ecx, 8
+		LOOP7:
+
+			cmp ecx, 0
+			je LOOP7EXIT
+			mov ebx, ecx
+			mov ecx, 8
+
+			LOOP8:	//Данный цикл копирует столбец матрицы M2 по индексу ebx-1 в массив buffer
+
+				cld
+				lea edi, [buffer+ecx*4-4]
+				lea esi, [M2_n+ebx*4-4]
+				mov eax, ecx
+				dec eax
+				mov dx, 32
+				mul dx
+				add esi, eax
+				movsd
+			loop LOOP8
+
+			mov ecx, 8
+			LOOP9:   //считаем элементы ebx-1 того столбца новой матрицы, в каждом цикле считается один элемент начиная с поледнего
+				
+				cmp ecx, 0
+				je LOOP9EXIT
+				mov eax, ecx    //перемножаем первые 4 элемента ebx-1 того столбца матрицы М2 и ecx-1 той строки матрицы М1
+				mov dx, 32
+				mul dx
+				movups xmm1, [M1_n+eax-32]
+				movups xmm2, [buffer]
+				mulps xmm1, xmm2
+
+				mov eax, ecx //перемножаем последние  4 элемента ebx-1 того столбца матрицы М2 и ecx-1 той строки матрицы М1
+				mov dx, 32
+				mul dx
+				movups xmm2, [M1_n+eax-16]
+				movups xmm3, [buffer+16]
+				mulps xmm2, xmm3
+				//складываем все элементы из xmm1 и xmm2
+				addps xmm1, xmm2
+				//дописать сложение всех float из xmm1 и запись их суммы в элемент M3[edx-1][ecx-1] 
+				movss [x], xmm1
+				fld [x]
+				shufps xmm1,xmm1, 11100101b
+				movss [x], xmm1
+				fld [x]
+			    shufps xmm1, xmm1, 11101010b
+				movss [x], xmm1
+				fld [x]
+				shufps xmm1, xmm1, 11111111b
+				movss [x], xmm1
+				fld [x]
+				fadd
+				fadd
+				fadd
+				xor edi,edi //Кладем в нужный элемент результат умножения строки на столбец
+				mov eax, ebx
+				dec eax
+				mov dx, 4
+				mul dx
+				add edi, eax
+				mov eax, ecx
+				dec eax
+				mov dx, 32
+				mul dx
+				add edi, eax
+				fstp [M3_n+edi]
+				dec ecx
+				jmp LOOP9
+			LOOP9EXIT:
+
+			mov ecx, ebx
+			dec ecx
+			jmp LOOP7
+		LOOP7EXIT:
+		
+	ret
+
+	matrixadd_n:
+		
+		lea esi, [M1_n]
+		lea edi, [buffer]
+		mov ecx, 8
+		repe movsw
+		mov ecx,8
+		LOOP5:
+			
+			fld [buffer+ecx*4-4]
+			fld [M2_n+ecx*4+60]
+			fadd 
+			fstp [M1_n+ecx*4-4]
+			loop LOOP5
+
+			
+	ret
+
+	matrixnumermul_n:
+
+		mov ecx, 64
+		LOOP6:
+		
+			fld [M3_n+ecx*4-4]
+			fld [input_x]
+			fmul
+			fstp [M3_n+ecx*4-4]
+			loop LOOP6
+	ret
+
+	start_n:
+		
+		call matrixadd_n
+		call matrixnumermul_n
+	}
 
 	return 0;
 }
