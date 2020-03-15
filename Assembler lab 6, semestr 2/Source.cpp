@@ -13,16 +13,17 @@ int main()
 		 0, 0,0,0,0,0,0,1 };
 	float M2[8][8] = {
 		  1, 0,0,0,0,0,0,0,
-		 0, 1,0,0,0,0,0,0,
-		 0, 0,1,0,0,0,0,0,
-		 0, 0,0,1,0,0,0,0,
-		 0, 0,0,0,1,0,0,0,
-		 0, 0,0,0,0,1,0,0,
-		 0, 0,0,0,0,0,1,0,
-		 0, 0,0,0,0,0,0,1 };
+		 0, 2,0,0,0,0,0,0,
+		 0, 0,3,0,0,0,0,0,
+		 0, 0,0,4,0,0,0,0,
+		 0, 0,0,0,5,0,0,0,
+		 0, 0,0,0,0,6,0,0,
+		 0, 0,0,0,0,0,7,0,
+		 0, 0,0,0,0,0,0,8 };
 	float M3[8][8];
 	float buffer[8];
 	float x;
+	float input_x = 1.767574;
 	__asm
 	{
 	jmp start
@@ -119,12 +120,28 @@ int main()
 		movups [M1+16], xmm1
 		
 	ret
+
+	matrixnumermul: //функция умножения числа input_x на матрицу М3
+		
+		mov ecx, 16
+		LOOP4:
+			mov eax, ecx
+			mov dx, 16
+			mul dx
+			movups xmm1, [M3+eax-16]
+			movss xmm2, [input_x]
+		    shufps xmm2, xmm2, 00000000b
+			mulps xmm1, xmm2
+			movups [M3+eax-16], xmm1
+			loop LOOP4
+
+	ret
 	
 	start:
 
 		call matrixadd
 		call matrixmul
-
+		call matrixnumermul
 
 	}
 
